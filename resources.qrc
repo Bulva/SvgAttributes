@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/SvgAttributes" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>
