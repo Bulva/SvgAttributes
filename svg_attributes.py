@@ -26,7 +26,7 @@ from PyQt4.QtGui import QAction, QIcon
 import resources
 # Import the code for the dialog
 from svg_attributes_dialog import SvgAttributesDialog
-
+import os.path
 
 
 class SvgAttributes:
