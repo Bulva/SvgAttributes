@@ -205,6 +205,7 @@ class SvgAttributes:
 
         for i in range(10):
             item = QStandardItem("Item %i" % i)
+            # TODO set reading attributes when combox state was changed
             #check = QtCore.Qt.Checked if randint(0, 1) == 1 else QtCore.Qt.Unchecked
             #item.setCheckState(check)
             item.setCheckable(True)
