@@ -21,8 +21,10 @@
  ***************************************************************************/
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
-from PyQt4.QtGui import QAction, QIcon
+from PyQt4.QtGui import QAction, QIcon, QFileDialog
 # Initialize Qt resources from file resources.py
+from qgis._core import QgsMessageLog
+
 import resources
 # Import the code for the dialog
 from svg_attributes_dialog import SvgAttributesDialog
@@ -67,6 +69,9 @@ class SvgAttributes:
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'SvgAttributes')
         self.toolbar.setObjectName(u'SvgAttributes')
+
+        self.dlg.lineEdit.clear()
+        self.dlg.pushButton.clicked.connect(lambda: self.selectOutputFile())
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -178,9 +183,18 @@ class SvgAttributes:
         # remove the toolbar
         del self.toolbar
 
+    def selectOutputFile(self):
+        filename = QFileDialog.getSaveFileName(self.dlg, "Select output file", "", '*.svg')
+        self.dlg.lineEdit.setText(filename)
 
     def run(self):
         """Run method that performs all the real work"""
+        layers = self.iface.legendInterface().layers()
+        layers_list = []
+        for layer in layers:
+            layers_list.append(layer.name())
+        self.dlg.comboBox_layers.addItems(layers_list)
+
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
