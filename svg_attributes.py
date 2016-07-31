@@ -20,16 +20,21 @@
  *                                                                         *
  ***************************************************************************/
 """
+from PyQt4 import *
+from qgis.PyQt import QtCore
+from random import randint
+
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
-from PyQt4.QtGui import QAction, QIcon, QFileDialog
+from PyQt4.QtGui import QAction, QIcon, QFileDialog, QListWidgetItem, QListView
 # Initialize Qt resources from file resources.py
+from PyQt4.QtGui import QStandardItem
+from PyQt4.QtGui import QStandardItemModel
 from qgis._core import QgsMessageLog
 
 import resources
 # Import the code for the dialog
 from svg_attributes_dialog import SvgAttributesDialog
 import os.path
-
 
 class SvgAttributes:
     """QGIS Plugin Implementation."""
@@ -193,7 +198,19 @@ class SvgAttributes:
         layers_list = []
         for layer in layers:
             layers_list.append(layer.name())
+        self.dlg.comboBox_layers.clear()
         self.dlg.comboBox_layers.addItems(layers_list)
+
+        model = QStandardItemModel()
+
+        for i in range(10):
+            item = QStandardItem("Item %i" % i)
+            #check = QtCore.Qt.Checked if randint(0, 1) == 1 else QtCore.Qt.Unchecked
+            #item.setCheckState(check)
+            item.setCheckable(True)
+            model.appendRow(item)
+
+        self.dlg.listView.setModel(model)
 
         # show the dialog
         self.dlg.show()
