@@ -30,6 +30,7 @@ from PyQt4.QtGui import QAction, QIcon, QFileDialog, QListWidgetItem, QListView
 from PyQt4.QtGui import QStandardItem
 from PyQt4.QtGui import QStandardItemModel
 from qgis._core import QgsMessageLog
+from qgis._core import QgsVectorLayer
 
 import resources
 # Import the code for the dialog
@@ -77,6 +78,7 @@ class SvgAttributes:
 
         self.dlg.lineEdit.clear()
         self.dlg.pushButton.clicked.connect(lambda: self.selectOutputFile())
+
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -189,8 +191,34 @@ class SvgAttributes:
         del self.toolbar
 
     def selectOutputFile(self):
+        """
+        Function for selecting path for output file
+        :return:
+        """
         filename = QFileDialog.getSaveFileName(self.dlg, "Select output file", "", '*.svg')
         self.dlg.lineEdit.setText(filename)
+
+    def fillCheckboxes(self, layers, name):
+        """
+        Function for filling listView with checkboxes
+        :param layers: layers from Qgis legend
+        :param name: name of current layer from comboBox
+        :return:
+        """
+        layer = None
+        self.dlg.listView.reset()
+        model = QStandardItemModel()
+        for layer in layers:
+            if (layer.name() == name):
+                fields = layer.pendingFields()
+                fieldNames = [field.name() for field in fields]
+                for fieldName in fieldNames:
+                    item = QStandardItem(fieldName)
+                    item.setCheckable(True)
+                    model.appendRow(item)
+
+        self.dlg.listView.setModel(model)
+
 
     def run(self):
         """Run method that performs all the real work"""
@@ -201,17 +229,12 @@ class SvgAttributes:
         self.dlg.comboBox_layers.clear()
         self.dlg.comboBox_layers.addItems(layers_list)
 
-        model = QStandardItemModel()
+        #Initial setting list of checkboxes
+        initialLayerComboBox = str(self.dlg.comboBox_layers.currentText())
+        self.fillCheckboxes(layers, initialLayerComboBox)
 
-        for i in range(10):
-            item = QStandardItem("Item %i" % i)
-            # TODO set reading attributes when combox state was changed
-            #check = QtCore.Qt.Checked if randint(0, 1) == 1 else QtCore.Qt.Unchecked
-            #item.setCheckState(check)
-            item.setCheckable(True)
-            model.appendRow(item)
-
-        self.dlg.listView.setModel(model)
+        #signal for filling listView
+        self.dlg.comboBox_layers.currentIndexChanged.connect(lambda: self.fillCheckboxes(layers, initialLayerComboBox))
 
         # show the dialog
         self.dlg.show()
