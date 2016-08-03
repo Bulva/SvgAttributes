@@ -198,7 +198,7 @@ class SvgAttributes:
         filename = QFileDialog.getSaveFileName(self.dlg, "Select output file", "", '*.svg')
         self.dlg.lineEdit.setText(filename)
 
-    def fillCheckboxes(self, layers, name):
+    def fillCheckboxes(self, layers, name, model):
         """
         Function for filling listView with checkboxes
         :param layers: layers from Qgis legend
@@ -207,9 +207,9 @@ class SvgAttributes:
         """
         layer = None
         self.dlg.listView.reset()
-        model = QStandardItemModel()
+
         for layer in layers:
-            if (layer.name() == name):
+            if layer.name() == name:
                 fields = layer.pendingFields()
                 fieldNames = [field.name() for field in fields]
                 for fieldName in fieldNames:
@@ -218,6 +218,32 @@ class SvgAttributes:
                     model.appendRow(item)
 
         self.dlg.listView.setModel(model)
+
+    def createSVG(self, filename,canvas_extent):
+        x_width = canvas_extent.xMaximum() - canvas_extent.xMinimum()
+        y_height = canvas_extent.yMaximum() - canvas_extent.yMinimum()
+        with open(filename, 'w') as outputfile:
+            outputfile.write('''<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n
+            <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n''')
+
+            outputfile.write('<svg width="'+str(x_width)+'" height="'+str(y_height)+'" version="1.1" xmlns="http://www.w3.org/2000/svg">\n')
+            outputfile.write('</svg>')
+
+    def createAttributesList(self):
+        checked_attributes = []
+        model = self.dlg.listView
+        for row in model.selectedIndexes():
+            '''item = model.item(row)'''
+            if row.checkState() == QtCore.Qt.Checked:
+                QgsMessageLog.logMessage(str(row.data()),'plugin')
+                checked_attributes.append(row.data())
+        return checked_attributes
+
+        '''items = self.dlg.listView.selectedIndexes()
+        for item in items:
+            if item.isChecked():
+                checked_attributes.append(item.data())
+        return checked_attributes'''
 
 
     def run(self):
@@ -229,12 +255,14 @@ class SvgAttributes:
         self.dlg.comboBox_layers.clear()
         self.dlg.comboBox_layers.addItems(layers_list)
 
+        model = QStandardItemModel()
+
         #Initial setting list of checkboxes
         initialLayerComboBox = str(self.dlg.comboBox_layers.currentText())
-        self.fillCheckboxes(layers, initialLayerComboBox)
+        self.fillCheckboxes(layers, initialLayerComboBox, model)
 
         #signal for filling listView
-        self.dlg.comboBox_layers.currentIndexChanged.connect(lambda: self.fillCheckboxes(layers, initialLayerComboBox))
+        self.dlg.comboBox_layers.currentIndexChanged.connect(lambda: self.fillCheckboxes(layers, str(self.dlg.comboBox_layers.currentText()), model))
 
         # show the dialog
         self.dlg.show()
@@ -242,6 +270,15 @@ class SvgAttributes:
         result = self.dlg.exec_()
         # See if OK was pressed
         if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
+            filename = self.dlg.lineEdit.text()
+            selectedLayerIndex = self.dlg.comboBox_layers.currentIndex()
+
+            QgsMessageLog.logMessage(str(self.createAttributesList()[0]))
+
+            '''', '.join(self.createAttributesList(self.dlg.listView.model()))
+            QgsMessageLog.logMessage(str(self.createAttributesList()[0]),'My Plugin')'''
+
+            canvas_extent = self.iface.mapCanvas().extent()
+            self.createSVG(filename,canvas_extent)
             pass
+

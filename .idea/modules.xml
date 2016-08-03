@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/SvgAttributes.iml" filepath="$PROJECT_DIR$/.idea/SvgAttributes.iml" />
+      <module fileurl="file://$USER_HOME$/Downloads/kartograph.py-master/.idea/kartograph.py-master.iml" filepath="$USER_HOME$/Downloads/kartograph.py-master/.idea/kartograph.py-master.iml" />
       <module fileurl="file://$PROJECT_DIR$/../simplesvg/.idea/simplesvg.iml" filepath="$PROJECT_DIR$/../simplesvg/.idea/simplesvg.iml" />
     </modules>
   </component>
