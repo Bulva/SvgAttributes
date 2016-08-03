@@ -215,6 +215,7 @@ class SvgAttributes:
                 for fieldName in fieldNames:
                     item = QStandardItem(fieldName)
                     item.setCheckable(True)
+                    item.setText(fieldName)
                     model.appendRow(item)
 
         self.dlg.listView.setModel(model)
@@ -231,19 +232,12 @@ class SvgAttributes:
 
     def createAttributesList(self):
         checked_attributes = []
-        model = self.dlg.listView
-        for row in model.selectedIndexes():
-            '''item = model.item(row)'''
-            if row.checkState() == QtCore.Qt.Checked:
-                QgsMessageLog.logMessage(str(row.data()),'plugin')
-                checked_attributes.append(row.data())
+        model = self.dlg.listView.model()
+        for row in range(model.rowCount()):
+            item = model.item(row)
+            if item.checkState() == QtCore.Qt.Checked:
+                checked_attributes.append(item.text())
         return checked_attributes
-
-        '''items = self.dlg.listView.selectedIndexes()
-        for item in items:
-            if item.isChecked():
-                checked_attributes.append(item.data())
-        return checked_attributes'''
 
 
     def run(self):
@@ -273,10 +267,9 @@ class SvgAttributes:
             filename = self.dlg.lineEdit.text()
             selectedLayerIndex = self.dlg.comboBox_layers.currentIndex()
 
-            QgsMessageLog.logMessage(str(self.createAttributesList()[0]))
+            #TODO reading features and their values from Attribute list
+            QgsMessageLog.logMessage(', '.join(self.createAttributesList()),'Repaired')
 
-            '''', '.join(self.createAttributesList(self.dlg.listView.model()))
-            QgsMessageLog.logMessage(str(self.createAttributesList()[0]),'My Plugin')'''
 
             canvas_extent = self.iface.mapCanvas().extent()
             self.createSVG(filename,canvas_extent)
