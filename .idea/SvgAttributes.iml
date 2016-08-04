@@ -7,6 +7,10 @@
     <orderEntry type="module" module-name="simplesvg" />
     <orderEntry type="module" module-name="kartograph.py-master" />
     <orderEntry type="module" module-name="final_cg" />
+    <orderEntry type="module" module-name="preview" />
+    <orderEntry type="module" module-name="PreviewGenerator" />
+    <orderEntry type="module" module-name="PreviewGenerator" />
+    <orderEntry type="module" module-name="EnviBands" />
   </component>
   <component name="TestRunnerService">
     <option name="projectConfiguration" value="Nosetests" />

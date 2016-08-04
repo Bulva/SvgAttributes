@@ -266,7 +266,8 @@ class SvgAttributes:
             pixelY = (point.y()-extent.yMaximum())/pixel_value
         return '<circle cx="' + str(pixelX) + '" cy="' + str(-pixelY) + '" r="3" '+atr_string+'/>\n'
 
-
+    def typeOfGeometry(self):
+        pass
 
     def createAttributesDictionary(self):
         checked_attributes = {}

@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
+    <mapping directory="$USER_HOME$/Plocha/EnviBands" vcs="Git" />
+    <mapping directory="$USER_HOME$/Plocha/PreviewGenerator" vcs="Git" />
+    <mapping directory="$USER_HOME$/Plocha/preview/PreviewGenerator" vcs="Git" />
   </component>
 </project>
