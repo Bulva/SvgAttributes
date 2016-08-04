@@ -6,6 +6,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="simplesvg" />
     <orderEntry type="module" module-name="kartograph.py-master" />
+    <orderEntry type="module" module-name="final_cg" />
   </component>
   <component name="TestRunnerService">
     <option name="projectConfiguration" value="Nosetests" />
