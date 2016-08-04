@@ -29,6 +29,7 @@ from PyQt4.QtGui import QAction, QIcon, QFileDialog, QListWidgetItem, QListView
 # Initialize Qt resources from file resources.py
 from PyQt4.QtGui import QStandardItem
 from PyQt4.QtGui import QStandardItemModel
+from qgis._core import QgsFeatureRequest
 from qgis._core import QgsMessageLog
 from qgis._core import QgsVectorLayer
 
@@ -220,15 +221,46 @@ class SvgAttributes:
 
         self.dlg.listView.setModel(model)
 
-    def createSVG(self, filename,canvas_extent):
-        x_width = canvas_extent.xMaximum() - canvas_extent.xMinimum()
-        y_height = canvas_extent.yMaximum() - canvas_extent.yMinimum()
+    def createSVG(self, filename):
+        width = self.iface.mapCanvas().size().width()
+        height = self.iface.mapCanvas().size().height()
         with open(filename, 'w') as outputfile:
             outputfile.write('''<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n
             <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n''')
 
-            outputfile.write('<svg width="'+str(x_width)+'" height="'+str(y_height)+'" version="1.1" xmlns="http://www.w3.org/2000/svg">\n')
+            outputfile.write('<svg width="'+str(width)+'" height="'+str(height)+'" version="1.1" xmlns="http://www.w3.org/2000/svg">\n')
+            points_list = self.writeLayer()
+
+            for svg_point in points_list:
+                outputfile.write(svg_point)
+
             outputfile.write('</svg>')
+
+    def writeLayer(self):
+        current_layer = self.dlg.comboBox_layers.currentText()
+        layers = self.iface.legendInterface().layers()
+        for layer in layers:
+            if layer.name() == current_layer:
+                return self.writeFeature(layer)
+
+
+    def writeFeature(self, layer):
+        points_svg = []
+        request = QgsFeatureRequest()
+        request.setFilterRect(self.iface.mapCanvas().extent())
+        for feature in layer.getFeatures(request):
+            points_svg.append(self.writePointToSVG(feature))
+        return points_svg
+
+    def writePointToSVG(self, feature):
+        point = feature.geometry().asPoint()
+        pixel_value = self.iface.mapCanvas().mapUnitsPerPixel()
+        extent = self.iface.mapCanvas().extent()
+        pixelX = (point.x()-extent.xMinimum())/pixel_value
+        pixelY = (point.y()-extent.yMaximum())/pixel_value
+        return '<circle cx="' + str(pixelX) + '" cy="' + str(-pixelY) + '" r="3" />\n'
+
+
 
     def createAttributesList(self):
         checked_attributes = []
@@ -270,8 +302,8 @@ class SvgAttributes:
             #TODO reading features and their values from Attribute list
             QgsMessageLog.logMessage(', '.join(self.createAttributesList()),'Repaired')
 
-
-            canvas_extent = self.iface.mapCanvas().extent()
-            self.createSVG(filename,canvas_extent)
+            self.createSVG(filename)
             pass
+
+
 
