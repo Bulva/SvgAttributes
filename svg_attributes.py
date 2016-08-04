@@ -199,7 +199,7 @@ class SvgAttributes:
         filename = QFileDialog.getSaveFileName(self.dlg, "Select output file", "", '*.svg')
         self.dlg.lineEdit.setText(filename)
 
-    def fillCheckboxes(self, layers, name, model):
+    def fillCheckboxes(self, layers, name):
         """
         Function for filling listView with checkboxes
         :param layers: layers from Qgis legend
@@ -207,6 +207,8 @@ class SvgAttributes:
         :return:
         """
         layer = None
+
+        model = QStandardItemModel()
         self.dlg.listView.reset()
 
         for layer in layers:
@@ -221,54 +223,58 @@ class SvgAttributes:
 
         self.dlg.listView.setModel(model)
 
-    def createSVG(self, filename):
+    def createSVG(self, filename, attributes_dict):
         width = self.iface.mapCanvas().size().width()
         height = self.iface.mapCanvas().size().height()
         with open(filename, 'w') as outputfile:
-            outputfile.write('''<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n
-            <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n''')
-
-            outputfile.write('<svg width="'+str(width)+'" height="'+str(height)+'" version="1.1" xmlns="http://www.w3.org/2000/svg">\n')
-            points_list = self.writeLayer()
+            outputfile.write('''<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n''')
+            outputfile.write('<svg width="'+str(width)+'" height="'+str(height)+'" version="1.1" xmlns="http://www.w3.org/2000/svg">\n\n')
+            points_list = self.writeLayer(attributes_dict)
 
             for svg_point in points_list:
                 outputfile.write(svg_point)
 
             outputfile.write('</svg>')
 
-    def writeLayer(self):
+    def writeLayer(self, attributes_dict):
         current_layer = self.dlg.comboBox_layers.currentText()
         layers = self.iface.legendInterface().layers()
         for layer in layers:
             if layer.name() == current_layer:
-                return self.writeFeature(layer)
+                return self.writeFeature(layer, attributes_dict)
 
 
-    def writeFeature(self, layer):
+    def writeFeature(self, layer, attributes_dict):
         points_svg = []
         request = QgsFeatureRequest()
         request.setFilterRect(self.iface.mapCanvas().extent())
         for feature in layer.getFeatures(request):
-            points_svg.append(self.writePointToSVG(feature))
+            points_svg.append(self.writePointToSVG(feature, attributes_dict))
         return points_svg
 
-    def writePointToSVG(self, feature):
+    def writePointToSVG(self, feature, attributes_dict):
         point = feature.geometry().asPoint()
-        pixel_value = self.iface.mapCanvas().mapUnitsPerPixel()
-        extent = self.iface.mapCanvas().extent()
-        pixelX = (point.x()-extent.xMinimum())/pixel_value
-        pixelY = (point.y()-extent.yMaximum())/pixel_value
-        return '<circle cx="' + str(pixelX) + '" cy="' + str(-pixelY) + '" r="3" />\n'
+
+        attributes = feature.attributes()
+        atr_string = ''
+        for key, value in attributes_dict.iteritems():
+            QgsMessageLog.logMessage(str(key)+' '+str(value), 'Repaired')
+            atr_string += ' '+str(value)+'="'+str(attributes[key])+'"'
+            pixel_value = self.iface.mapCanvas().mapUnitsPerPixel()
+            extent = self.iface.mapCanvas().extent()
+            pixelX = (point.x()-extent.xMinimum())/pixel_value
+            pixelY = (point.y()-extent.yMaximum())/pixel_value
+        return '<circle cx="' + str(pixelX) + '" cy="' + str(-pixelY) + '" r="3" '+atr_string+'/>\n'
 
 
 
-    def createAttributesList(self):
-        checked_attributes = []
+    def createAttributesDictionary(self):
+        checked_attributes = {}
         model = self.dlg.listView.model()
         for row in range(model.rowCount()):
             item = model.item(row)
             if item.checkState() == QtCore.Qt.Checked:
-                checked_attributes.append(item.text())
+                checked_attributes[row] = item.text()
         return checked_attributes
 
 
@@ -281,14 +287,14 @@ class SvgAttributes:
         self.dlg.comboBox_layers.clear()
         self.dlg.comboBox_layers.addItems(layers_list)
 
-        model = QStandardItemModel()
+
 
         #Initial setting list of checkboxes
         initialLayerComboBox = str(self.dlg.comboBox_layers.currentText())
-        self.fillCheckboxes(layers, initialLayerComboBox, model)
+        self.fillCheckboxes(layers, initialLayerComboBox)
 
         #signal for filling listView
-        self.dlg.comboBox_layers.currentIndexChanged.connect(lambda: self.fillCheckboxes(layers, str(self.dlg.comboBox_layers.currentText()), model))
+        self.dlg.comboBox_layers.currentIndexChanged.connect(lambda: self.fillCheckboxes(layers, str(self.dlg.comboBox_layers.currentText())))
 
         # show the dialog
         self.dlg.show()
@@ -299,10 +305,10 @@ class SvgAttributes:
             filename = self.dlg.lineEdit.text()
             selectedLayerIndex = self.dlg.comboBox_layers.currentIndex()
 
-            #TODO reading features and their values from Attribute list
-            QgsMessageLog.logMessage(', '.join(self.createAttributesList()),'Repaired')
+            #TODO Create reprojection of layer because it is not working with other CRS than EPSG: 4326
 
-            self.createSVG(filename)
+
+            self.createSVG(filename, self.createAttributesDictionary())
             pass
 
 
