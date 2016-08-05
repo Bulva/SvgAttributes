@@ -231,10 +231,11 @@ class SvgAttributes:
         with open(filename, 'w') as outputfile:
             outputfile.write('''<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n''')
             outputfile.write('<svg width="'+str(width)+'" height="'+str(height)+'" version="1.1" xmlns="http://www.w3.org/2000/svg">\n\n')
-            points_list = self.writeLayer(attributes_dict)
 
-            for svg_point in points_list:
-                outputfile.write(svg_point)
+            features_list = self.writeLayer(attributes_dict)
+
+            for svg_feature in features_list:
+                outputfile.write(svg_feature)
 
             outputfile.write('</svg>')
 
@@ -243,16 +244,29 @@ class SvgAttributes:
         layers = self.iface.legendInterface().layers()
         for layer in layers:
             if layer.name() == current_layer:
-                return self.writeFeature(layer, attributes_dict)
+                return self.geometryLayerType(layer, attributes_dict)
 
 
-    def writeFeature(self, layer, attributes_dict):
+
+    def writePointFeature(self, layer, attributes_dict):
         points_svg = []
         request = QgsFeatureRequest()
         request.setFilterRect(self.iface.mapCanvas().extent())
         for feature in layer.getFeatures(request):
             points_svg.append(self.writePointToSVG(feature, attributes_dict))
         return points_svg
+
+    def writeLineFeature(self, layer, attributes_dict):
+        lines_svg = []
+        #TODO get line geometry and create svg path with the same coordinates
+        #layers_ = iface.legendInterface().layers()
+        #TODO need only polyline geometry from mapCanvas extent - How to do it?
+        #request.setFilterRect(iface.mapCanvas().extent())
+        #for feature in layers_[0].getFeatures(request):
+        #   geom = feature.geometry()
+        #   geom.asPolyline()  -- one list = one polyline, iterating through list of coordinates and creating paths
+
+        return lines_svg
 
     def writePointToSVG(self, feature, attributes_dict):
         point = feature.geometry().asPoint()
@@ -278,16 +292,20 @@ class SvgAttributes:
                 checked_attributes[row] = item.text()
         return checked_attributes
 
-    def geometryLayerType(self, layer):
+    def geometryLayerType(self, layer, attributes_dict):
         if layer.wkbType() == QGis.WKBPoint:
-            pass
+            return self.writePointFeature(layer, attributes_dict)
         elif layer.wkbType() == QGis.WKBLineString:
+            #self.writeLineFeature(layer, attributes_dict)
             pass
         elif layer.wkbType() == QGis.WKBPolygon:
+            #self.writePolygonFeature(layer, attributes_dict)
             pass
         elif layer.wkbType() == QGis.WKBMultiLineString:
+            #self.writeLineFeature(layer, attributes_dict)
             pass
         elif layer.wkbType() == QGis.WKBMultiPolygon:
+            #self.writePolygonFeature(layer, attributes_dict)
             pass
         else:
             raise GeometryError('Unknown geometry type')
