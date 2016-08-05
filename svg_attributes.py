@@ -23,15 +23,17 @@
 from PyQt4 import *
 from qgis.PyQt import QtCore
 from random import randint
+import os.path
 
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt4.QtGui import QAction, QIcon, QFileDialog, QListWidgetItem, QListView
 # Initialize Qt resources from file resources.py
 from PyQt4.QtGui import QStandardItem
 from PyQt4.QtGui import QStandardItemModel
-from qgis._core import QgsFeatureRequest
-from qgis._core import QgsMessageLog
-from qgis._core import QgsVectorLayer
+from qgis.core import QgsFeatureRequest
+from qgis.core import QgsMessageLog
+from qgis.core import QGis
+import GeometryError
 
 import resources
 # Import the code for the dialog
@@ -275,6 +277,21 @@ class SvgAttributes:
             if item.checkState() == QtCore.Qt.Checked:
                 checked_attributes[row] = item.text()
         return checked_attributes
+
+    def geometryLayerType(self, layer):
+        if layer.wkbType() == QGis.WKBPoint:
+            pass
+        elif layer.wkbType() == QGis.WKBLineString:
+            pass
+        elif layer.wkbType() == QGis.WKBPolygon:
+            pass
+        elif layer.wkbType() == QGis.WKBMultiLineString:
+            pass
+        elif layer.wkbType() == QGis.WKBMultiPolygon:
+            pass
+        else:
+            raise GeometryError('Unknown geometry type')
+
 
 
     def run(self):
