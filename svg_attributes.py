@@ -28,6 +28,7 @@ import os.path
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from PyQt4.QtGui import QAction, QIcon, QFileDialog, QListWidgetItem, QListView
 # Initialize Qt resources from file resources.py
+from PyQt4.QtGui import QMessageBox
 from PyQt4.QtGui import QStandardItem
 from PyQt4.QtGui import QStandardItemModel
 from qgis.core import QgsFeatureRequest
@@ -233,11 +234,11 @@ class SvgAttributes:
             outputfile.write('<svg width="'+str(width)+'" height="'+str(height)+'" version="1.1" xmlns="http://www.w3.org/2000/svg">\n\n')
 
             features_list = self.writeLayer(attributes_dict)
-
             for svg_feature in features_list:
                 outputfile.write(svg_feature)
 
             outputfile.write('</svg>')
+            QMessageBox.information(None, "SVG Writing:", 'Writing SVG was finished')
 
     def writeLayer(self, attributes_dict):
         current_layer = self.dlg.comboBox_layers.currentText()
@@ -258,23 +259,44 @@ class SvgAttributes:
 
     def writeLineFeature(self, layer, attributes_dict):
         lines_svg = []
-        #TODO get line geometry and create svg path with the same coordinates
-        #layers_ = iface.legendInterface().layers()
-        #TODO need only polyline geometry from mapCanvas extent - How to do it?
-        #request.setFilterRect(iface.mapCanvas().extent())
-        #for feature in layers_[0].getFeatures(request):
-        #   geom = feature.geometry()
-        #   geom.asPolyline()  -- one list = one polyline, iterating through list of coordinates and creating paths
-
+        request = QgsFeatureRequest()
+        request.setFilterRect(self.iface.mapCanvas().extent())
+        for feature in layer.getFeatures(request):
+            lines_svg.append(self.writeLineToSVG(feature, attributes_dict))
         return lines_svg
+
+    def writeLineToSVG(self, feature, attributes_dict):
+        line = feature.geometry().asPolyline()
+        attributes = feature.attributes()
+        atr_string = ''
+        line_string = 'M'
+        pixel_value = self.iface.mapCanvas().mapUnitsPerPixel()
+        extent = self.iface.mapCanvas().extent()
+        iterator_number = 0
+
+        #TODO Need find only points in mapcanvas - not working for big features outside of canvas
+
+        for key, value in attributes_dict.iteritems():
+            atr_string += ' '+str(value)+'="'+str(attributes[key])+'"'
+
+        for coordinates in line:
+                pixelX = (coordinates[0]-extent.xMinimum())/pixel_value
+                pixelY = (coordinates[1]-extent.yMaximum())/pixel_value
+                if iterator_number == 0:
+                    line_string += str(pixelX)+' '+str(-pixelY)+' '
+                    iterator_number += 1
+                else:
+                    line_string += 'L'+str(pixelX) + ' ' + str(-pixelY) + ' '
+        return '<path fill="None" fill-opacity="0" stroke="#000" stroke-width="0.26" d="'+line_string+'" '+atr_string+' />\n'
+
+
 
     def writePointToSVG(self, feature, attributes_dict):
         point = feature.geometry().asPoint()
-
         attributes = feature.attributes()
         atr_string = ''
         for key, value in attributes_dict.iteritems():
-            QgsMessageLog.logMessage(str(key)+' '+str(value), 'Repaired')
+            #QgsMessageLog.logMessage(str(key)+' '+str(value), 'Repaired')
             atr_string += ' '+str(value)+'="'+str(attributes[key])+'"'
             pixel_value = self.iface.mapCanvas().mapUnitsPerPixel()
             extent = self.iface.mapCanvas().extent()
@@ -296,14 +318,12 @@ class SvgAttributes:
         if layer.wkbType() == QGis.WKBPoint:
             return self.writePointFeature(layer, attributes_dict)
         elif layer.wkbType() == QGis.WKBLineString:
-            #self.writeLineFeature(layer, attributes_dict)
-            pass
+            return self.writeLineFeature(layer, attributes_dict)
         elif layer.wkbType() == QGis.WKBPolygon:
             #self.writePolygonFeature(layer, attributes_dict)
             pass
         elif layer.wkbType() == QGis.WKBMultiLineString:
-            #self.writeLineFeature(layer, attributes_dict)
-            pass
+            return self.writeLineFeature(layer, attributes_dict)
         elif layer.wkbType() == QGis.WKBMultiPolygon:
             #self.writePolygonFeature(layer, attributes_dict)
             pass
