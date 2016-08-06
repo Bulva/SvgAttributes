@@ -265,6 +265,14 @@ class SvgAttributes:
             lines_svg.append(self.writeLineToSVG(feature, attributes_dict))
         return lines_svg
 
+    def writePolygonFeature(self, layer, attributes_dict):
+        polygons_svg = []
+        request = QgsFeatureRequest()
+        request.setFilterRect(self.iface.mapCanvas().extent())
+        for feature in layer.getFeatures(request):
+            polygons_svg.append(self.writePolygonToSVG(feature, attributes_dict))
+        return polygons_svg
+
     def writeLineToSVG(self, feature, attributes_dict):
         line = feature.geometry().asPolyline()
         attributes = feature.attributes()
@@ -289,6 +297,32 @@ class SvgAttributes:
                     line_string += 'L'+str(pixelX) + ' ' + str(-pixelY) + ' '
         return '<path fill="None" fill-opacity="0" stroke="#000" stroke-width="0.26" d="'+line_string+'" '+atr_string+' />\n'
 
+    def writePolygonToSVG(self, feature, attributes_dict):
+        polygon = feature.geometry().asPolygon()
+        attributes = feature.attributes()
+        atr_string = ''
+        polygon_string = 'M'
+        pixel_value = self.iface.mapCanvas().mapUnitsPerPixel()
+        extent = self.iface.mapCanvas().extent()
+        iterator_number = 0
+
+        #TODO Need find only points in mapcanvas - not working for big features outside of canvas
+
+        for key, value in attributes_dict.iteritems():
+            atr_string += ' '+str(value)+'="'+str(attributes[key])+'"'
+
+        for polygon_list in polygon:
+            if polygon_list:
+                for coordinates in polygon_list:
+                    #QgsMessageLog.logMessage(str(coordinates)+' '+str(iterator_number), 'Debuging')
+                    pixelX = (coordinates[0]-extent.xMinimum())/pixel_value
+                    pixelY = (coordinates[1]-extent.yMaximum())/pixel_value
+                    if iterator_number == 0:
+                        polygon_string += str(pixelX)+' '+str(-pixelY)+' '
+                        iterator_number += 1
+                    else:
+                        polygon_string += 'L'+str(pixelX) + ' ' + str(-pixelY) + ' '
+        return '<path stroke-width="0.26" d="'+polygon_string+'" '+atr_string+' />\n'
 
 
     def writePointToSVG(self, feature, attributes_dict):
@@ -320,13 +354,11 @@ class SvgAttributes:
         elif layer.wkbType() == QGis.WKBLineString:
             return self.writeLineFeature(layer, attributes_dict)
         elif layer.wkbType() == QGis.WKBPolygon:
-            #self.writePolygonFeature(layer, attributes_dict)
-            pass
+            return self.writePolygonFeature(layer, attributes_dict)
         elif layer.wkbType() == QGis.WKBMultiLineString:
             return self.writeLineFeature(layer, attributes_dict)
         elif layer.wkbType() == QGis.WKBMultiPolygon:
-            #self.writePolygonFeature(layer, attributes_dict)
-            pass
+            return self.writePolygonFeature(layer, attributes_dict)
         else:
             raise GeometryError('Unknown geometry type')
 
