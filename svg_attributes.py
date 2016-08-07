@@ -285,7 +285,7 @@ class SvgAttributes:
         #TODO Need find only points in mapcanvas - not working for big features outside of canvas
 
         for key, value in attributes_dict.iteritems():
-            atr_string += ' '+str(value)+'="'+str(attributes[key])+'"'
+            atr_string += ' '+value.encode('utf-8')+'="'+attributes[key].encode('utf-8')+'"'
 
         for coordinates in line:
                 pixelX = (coordinates[0]-extent.xMinimum())/pixel_value
@@ -306,15 +306,15 @@ class SvgAttributes:
         extent = self.iface.mapCanvas().extent()
         iterator_number = 0
 
-        #TODO Need find only points in mapcanvas - not working for big features outside of canvas
+        #TODO Needed find why some polygons are problematic for export
 
         for key, value in attributes_dict.iteritems():
-            atr_string += ' '+str(value)+'="'+str(attributes[key])+'"'
+            atr_string += ' '+value.encode('utf-8')+'="'+attributes[key].encode('utf-8')+'"'
 
         for polygon_list in polygon:
+            QgsMessageLog.logMessage('Zapisuji Polygon','Zkouska')
             if polygon_list:
                 for coordinates in polygon_list:
-                    #QgsMessageLog.logMessage(str(coordinates)+' '+str(iterator_number), 'Debuging')
                     pixelX = (coordinates[0]-extent.xMinimum())/pixel_value
                     pixelY = (coordinates[1]-extent.yMaximum())/pixel_value
                     if iterator_number == 0:
@@ -322,6 +322,23 @@ class SvgAttributes:
                         iterator_number += 1
                     else:
                         polygon_string += 'L'+str(pixelX) + ' ' + str(-pixelY) + ' '
+
+        multiPolygon = feature.geometry().asMultiPolygon()
+        for multiPolygon_list in multiPolygon:
+            QgsMessageLog.logMessage('Zapisuji Multipolygon', 'Zkouska')
+            if multiPolygon_list:
+                for multiPolygon_parts in multiPolygon_list:
+                    if multiPolygon_parts:
+                        for coordinates in multiPolygon_parts:
+                            pixelX = (coordinates[0] - extent.xMinimum()) / pixel_value
+                            pixelY = (coordinates[1] - extent.yMaximum()) / pixel_value
+                            if iterator_number == 0:
+                                polygon_string += str(pixelX) + ' ' + str(-pixelY) + ' '
+                                iterator_number += 1
+                            else:
+                                polygon_string += 'L' + str(pixelX) + ' ' + str(-pixelY) + ' '
+        QgsMessageLog.logMessage('Konec zapisu', 'Zkouska')
+
         return '<path stroke-width="0.26" d="'+polygon_string+'" '+atr_string+' />\n'
 
 
@@ -331,7 +348,7 @@ class SvgAttributes:
         atr_string = ''
         for key, value in attributes_dict.iteritems():
             #QgsMessageLog.logMessage(str(key)+' '+str(value), 'Repaired')
-            atr_string += ' '+str(value)+'="'+str(attributes[key])+'"'
+            atr_string += ' '+value.encode('utf-8')+'="'+attributes[key].encode('utf-8')+'"'
             pixel_value = self.iface.mapCanvas().mapUnitsPerPixel()
             extent = self.iface.mapCanvas().extent()
             pixelX = (point.x()-extent.xMinimum())/pixel_value
